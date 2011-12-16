@@ -3,12 +3,15 @@ require File.join(File.dirname(__FILE__), '../../', 'lib/goliath/test_helper_ws'
 require File.join(File.dirname(__FILE__), '../../', 'lib/goliath')
 require File.join(File.dirname(__FILE__), '../../', 'lib/goliath/websocket')
 
+opened = false
+
 class WebSocketEndPoint < Goliath::WebSocket
   def on_open(env)
+    opened = true
   end
 
   def on_error(env, error)
-    env.logger.error error
+    raise RuntimeError
   end
 
   def on_message(env, msg)
@@ -29,9 +32,11 @@ describe "WebSocket" do
   include Goliath::TestHelper
 
   let(:err) { Proc.new { |c| fail "HTTP Request failed #{c.response}" } }
+  before(:each) { opened = false }
 
   it "should accept connection" do
     with_api(DummyServer, {:verbose => true, :log_stdout => true}) do |server|
+      WebSocketEndPoint.any_instance.should_receive(:on_open)
       ws_client_connect('/ws')
     end
   end
